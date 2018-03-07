@@ -477,3 +477,11 @@ heartTime ： 心跳时间，服务器会以这个时间频率告诉中间件我
 id | 自定义任务id
 description | 任务描述
 ignore | 是否忽略集群控制，作用跟level=-1一样，但只针对该任务
+
+``` java
+@ScheduledCluster(id="updateData", description = "每小时更新一次数据")
+@Scheduled(cron = "0 0 0/1 * * ?")
+public void update(){
+    // 更新数据
+}
+```

@@ -29,7 +29,7 @@ public @interface ScheduledCluster {
      * 任务描述
      * @return
      */
-    String description();
+    String description() default "";
 
     /**
      * 是否忽略集群控制
