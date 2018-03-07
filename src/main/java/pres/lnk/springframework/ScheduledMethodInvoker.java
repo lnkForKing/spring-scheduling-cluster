@@ -49,15 +49,16 @@ public class ScheduledMethodInvoker {
     }
 
     public void invoke() {
+        long startTimeMillis = 0, endTimeMillis = 0;
         try {
-            if (ignore) {
+            int maxLevel = scheduler.getMaxAliveLevel();
+            if (ignore || maxLevel < 0) {
                 //设置该任务不受集群调试器控制，直接执行
                 ReflectionUtils.makeAccessible(this.method);
                 this.method.invoke(this.target);
                 return;
             }
 
-            int maxLevel = scheduler.getMaxAliveLevel();
             if (scheduler.getLevel() == 0 || scheduler.getLevel() > maxLevel) {
                 //如果当前服务器的级别是0，或比当前运行中最高级别的服务器低，则不执行任务
                 return;
@@ -74,8 +75,10 @@ public class ScheduledMethodInvoker {
                 //减500毫秒是为了解决jdk定时任务存在误差问题，防止下次任务执行时间时间还没到而跳过本次任务
                 timeoutMillis -= 500;
                 if (scheduler.lock(taskId, timeoutMillis)) {
+                    startTimeMillis = scheduler.currentTimeMillis();
                     ReflectionUtils.makeAccessible(this.method);
                     this.method.invoke(this.target);
+                    endTimeMillis = scheduler.currentTimeMillis();
 
                     if (ScheduledUtil.SCHEDULED_FIXED_DELAY.equals(ScheduledUtil.getType(scheduled))) {
                         timeoutMillis = ScheduledUtil.getNextTimeInterval(scheduled, embeddedValueResolver);
@@ -83,11 +86,20 @@ public class ScheduledMethodInvoker {
                     }
                 }
             }
-        } catch (InvocationTargetException ex) {
-            ReflectionUtils.rethrowRuntimeException(ex.getTargetException());
-        } catch (IllegalAccessException ex) {
-            throw new UndeclaredThrowableException(ex);
+        } catch (Exception ex){
+            scheduler.setException(ex);
+        } finally {
+            try {
+                scheduler.executed(this.method, this.target, startTimeMillis, endTimeMillis);
+            } catch (InvocationTargetException ex) {
+                ReflectionUtils.rethrowRuntimeException(ex.getTargetException());
+            } catch (IllegalAccessException ex) {
+                throw new UndeclaredThrowableException(ex);
+            } catch (Exception ex){
+                ReflectionUtils.rethrowRuntimeException(ex);
+            }
         }
+
     }
 
     public void init() {
@@ -104,13 +116,5 @@ public class ScheduledMethodInvoker {
         Scheduled scheduled = method.getAnnotation(Scheduled.class);
         String flag = ScheduledUtil.getFlag(scheduled, embeddedValueResolver);
         taskId += "_" + flag;
-    }
-
-    public Object getTarget() {
-        return target;
-    }
-
-    public Method getMethod() {
-        return method;
     }
 }

@@ -1,5 +1,7 @@
 package pres.lnk.springframework;
 
+import java.lang.reflect.Method;
+
 /**
  * 集群任务调度器
  * 用来控制集群服务器中，相同的任务每次只有一个任务在执行
@@ -9,6 +11,26 @@ package pres.lnk.springframework;
  */
 public abstract class AbstractScheduler {
     /**
+     * 等待下次执行任务
+     */
+    public static final int WAITING = 0;
+    /**
+     * 本次任务执行成功
+     */
+    public static final int SUCCESS = 1;
+    /**
+     * 本次任务未执行，可能是没抢到任务锁，或服务器级别低
+     */
+    public static final int FAIL = 2;
+    /**
+     * 本次任务执行出现异常
+     *
+     * @see #getException()
+     */
+    public static final int ERROR = 3;
+
+
+    /**
      * 任务调度器优先级别
      *
      * @see #getLevel()
@@ -16,9 +38,21 @@ public abstract class AbstractScheduler {
     private int level;
 
     /**
+     * 心跳时间
      *
+     * @see #getHeartTime()
      */
     private int heartTime;
+
+    /**
+     * 任务执行状态
+     */
+    private int status;
+
+    /**
+     * 任务执行出现的异常
+     */
+    private Exception exception;
 
     public AbstractScheduler() {
         this.level = 1;
@@ -119,5 +153,41 @@ public abstract class AbstractScheduler {
      */
     public void setHeartTime(int heartTime) {
         this.heartTime = heartTime;
+    }
+
+    /**
+     * 本次任务执行结束
+     *
+     * @param method 执行的方法
+     * @param targer 执行的方法对象
+     * @param startTimeMillis 任务开始时间（毫秒），中间件服务器时间，只有任务执行成功才会有值
+     * @param endTimeMillis 任务结束时间（毫秒），中间件服务器时间，只有任务执行成功才会有值
+     * @throws Exception 如果出现异常又不想处理，可以抛回给Spring处理
+     */
+    public void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis) throws Exception{
+        if(status == ERROR){
+            throw getException();
+        }
+    }
+
+    void reStatus(){
+        status = WAITING;
+        exception = null;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public Exception getException() {
+        return exception;
+    }
+
+    public void setException(Exception exception) {
+        this.exception = exception;
     }
 }

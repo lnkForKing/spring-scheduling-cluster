@@ -58,8 +58,13 @@ public class ScheduledClusterAnnotationBeanPostProcessor extends ScheduledAnnota
             scheduler.setLevel(level);
             scheduler.setHeartTime(heartTime);
             scheduler.keepAlive();
-            taskRegistrar.addFixedRateTask(new IntervalTask(() -> {
-                scheduler.keepAlive();
+
+            taskRegistrar.addFixedRateTask(new IntervalTask(new Runnable() {
+                @Override
+                public void run() {
+                    scheduler.keepAlive();
+                }
+
             }, heartTime * 1000, heartTime * 1000));
         }
     }
