@@ -92,8 +92,8 @@ public class RedisSchedulerImpl extends AbstractScheduler {
     }
 
     /*
-     *  ------------- 下面3个重载方法可选 -------------
-     *  如果启用了主从服务器则 keepAlive() 和 getMaxAliveLevel() 必须重载
+     *  ------------- 下面3个重写方法可选 -------------
+     *  如果启用了主从服务器则 keepAlive() 和 getMaxAliveLevel() 必须重写
      */
 
     @Override
@@ -134,8 +134,18 @@ public class RedisSchedulerImpl extends AbstractScheduler {
 
     }
 
+    @Override
+    public int getMaxAliveLevel() {
+        Integer level = getCache(MAX_LEVEL);
+        if (level != null) {
+            return level;
+        }
+        //如果没有最高级别则返回当前服务器级别
+        return getLevel();
+    }
+
     /**
-     * 任务执行结束后调用的方法，不需要做后续处理可不重载
+     * 任务执行结束后调用的方法，不需要做后续处理可不重写
      */
     @Override
     public void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis) throws Exception {
@@ -148,17 +158,6 @@ public class RedisSchedulerImpl extends AbstractScheduler {
                 // 执行任务出现异常，如果不想处理可以抛回由Spring处理
                 throw getException();
         }
-    }
-
-
-    @Override
-    public int getMaxAliveLevel() {
-        Integer level = getCache(MAX_LEVEL);
-        if (level != null) {
-            return level;
-        }
-        //如果没有最高级别则返回当前服务器级别
-        return getLevel();
     }
 
     public <T> T getCache(String key) {
@@ -193,6 +192,7 @@ import java.util.concurrent.TimeUnit;
  * @Author lnk
  * @Date 2018/2/28
  */
+@Component
 public class MysqlSchedulerImpl extends AbstractScheduler {
     private static final String MAX_LEVEL = "maxLevel";
 
@@ -235,8 +235,8 @@ public class MysqlSchedulerImpl extends AbstractScheduler {
     }
 
     /*
-     *  ------------- 下面3个重载方法可选 -------------
-     *  如果启用了主从服务器则 keepAlive() 和 getMaxAliveLevel() 必须重载
+     *  ------------- 下面3个重写方法可选 -------------
+     *  如果启用了主从服务器则 keepAlive() 和 getMaxAliveLevel() 必须重写
      */
      
     @Override
@@ -284,7 +284,7 @@ public class MysqlSchedulerImpl extends AbstractScheduler {
     }
 
     /**
-     * 任务执行结束后调用的方法，不需要做后续处理可不重载
+     * 任务执行结束后调用的方法，不需要做后续处理可不重写
      */
     @Override
     public void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis) throws Exception {
@@ -404,19 +404,38 @@ public interface TimedTaskMapper {
 
 ```
 
+数据库表结构   
+t_timed_task   
+字段 | 类型 | 说明
+- | - | - 
+id | varchar(255) PRIMARY NOT NULL | 任务id
+timeout | bigint NOT NULL | 锁的失效时间
+value | varchar(255) DEFAULT NULL | 锁对应的值
+
+``` sql
+DROP TABLE IF EXISTS `t_timed_task`;
+
+CREATE TABLE `t_timed_task` (
+  `id` varchar(255) NOT NULL,
+  `timeout` bigint(20) NOT NULL,
+  `value` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+```
+
 ### 自定义中间件
 自定义类继承抽象类`AbstractScheduler`，实现父类的方法并注册成Spring Bean。   
 `AbstractScheduler` 方法说明
 
-方法 | 必须 | 说明
- -  -  - 
-boolean check(String id) | 是 | 检查任务id是否没被锁，如果没被锁则表示可以执行任务，下一步就获取锁 
-boolean lock(String id, long timeoutMillis) | 是 | 对任务id加锁，并在下次执行任务前释放锁，返回加锁是否成功 
-void relock(String id, long timeoutMillis) | 是 | 修改任务id锁的释放时间 
-long currentTimeMillis() | 是 |  获取中间件的服务器时间，做为锁的参考时间。集群所有服务器最好做时间同步，避免cron任务出差误差 
-void keepAlive() | 如果启用优先级功能则必须重载 | 将服务器最高优先级别保存到中间件
-int getMaxAliveLevel() | 如果启用优先级功能则必须重载 | 获取中间件保存的最高级别 
-void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis) | 否 | 定时任务执行结束的后续处理 
+ 方法 | 必须 | 说明
+ - | - | - 
+ boolean check(String id) | 是 | 检查任务id是否没被锁，如果没被锁则表示可以执行任务，下一步就获取锁 
+ boolean lock(String id, long timeoutMillis) | 是 | 对任务id加锁，并在下次执行任务前释放锁，返回加锁是否成功 
+ void relock(String id, long timeoutMillis) | 是 | 修改任务id锁的释放时间 
+ long currentTimeMillis() | 是 |  获取中间件的服务器时间，做为锁的参考时间。集群所有服务器最好做时间同步，避免cron任务出差误差 
+ void keepAlive() | 如果启用优先级功能则必须重写 | 将服务器最高优先级别保存到中间件
+ int getMaxAliveLevel() | 如果启用优先级功能则必须重写 | 获取中间件保存的最高级别 
+ void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis) | 否 | 定时任务执行结束的后续处理 
 
 
 ## 设置主从服务器
@@ -436,3 +455,4 @@ spring:
 配置说明：   
 level ： 优先级别，1 等级最高，数字越大等级越低。其中 0 是该服务器不执行定时任务。 -1 是不参与集群服务调度，不受优先级影响，任务每次都会执行。   
 heartTime ： 心跳时间，服务器会以这个时间频率告诉中间件我还活着
+
