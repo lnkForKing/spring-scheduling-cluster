@@ -145,10 +145,11 @@ public class RedisSchedulerImpl extends AbstractScheduler {
     }
 
     /**
-     * 任务执行结束后调用的方法，不需要做后续处理可不重写
+     * 任务执行结束后调用的方法，可以写日志，不需要做后续处理可不重写
      */
     @Override
-    public void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis) throws Exception {
+    public void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis, String description) throws Exception {
+        //可写任务执行日志
         switch (getStatus()){
             case AbstractScheduler.SUCCESS :
                 // 执行成功
@@ -288,10 +289,11 @@ public class MysqlSchedulerImpl extends AbstractScheduler {
     }
 
     /**
-     * 任务执行结束后调用的方法，不需要做后续处理可不重写
+     * 任务执行结束后调用的方法，可以写日志，不需要做后续处理可不重写
      */
     @Override
-    public void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis) throws Exception {
+    public void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis, String description) throws Exception {
+        //可写任务执行日志
         switch (getStatus()){
             case AbstractScheduler.SUCCESS :
                 // 执行成功
@@ -467,4 +469,11 @@ heartTime ： 心跳时间，服务器会以这个时间频率告诉中间件我
 
 或者重写中间件的getLevel()方法，自定义level规则，例如根据ip判断level，这样不用每个服务器单独改配置文件
 
+## 注解@ScheduledCluster
+该注解用在`@Scheduled`的方法上，有以下属性
 
+属性 | 说明
+--- | ---
+id | 自定义任务id
+description | 任务描述
+ignore | 是否忽略集群控制，作用跟level=-1一样，但只针对该任务

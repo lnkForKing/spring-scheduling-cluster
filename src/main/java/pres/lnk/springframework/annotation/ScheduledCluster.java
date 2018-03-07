@@ -26,6 +26,12 @@ public @interface ScheduledCluster {
     String id() default "";
 
     /**
+     * 任务描述
+     * @return
+     */
+    String description();
+
+    /**
      * 是否忽略集群控制
      * 不加入集群定时任务控制，只按自己的工程实例规则执行
      * @return

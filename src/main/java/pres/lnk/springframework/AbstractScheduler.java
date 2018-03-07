@@ -1,5 +1,7 @@
 package pres.lnk.springframework;
 
+import pres.lnk.springframework.annotation.ScheduledCluster;
+
 import java.lang.reflect.Method;
 
 /**
@@ -10,31 +12,20 @@ import java.lang.reflect.Method;
  * @Date 2018/2/28
  */
 public abstract class AbstractScheduler {
-    /**
-     * 等待下次执行任务
-     */
+    /** 等待下次执行任务 */
     public static final int WAITING = 0;
-    /**
-     * 本次任务执行成功
-     */
+    /** 本次任务执行成功 */
     public static final int SUCCESS = 1;
     /**
      * 本次任务执行出现异常
-     *
      * @see #getException()
      */
     public static final int ERROR = 3;
-    /**
-     * 本次任务未执行，服务器级别低
-     */
+    /** 本次任务未执行，服务器级别低 */
     public static final int FAIL_LEVEL = 21;
-    /**
-     * 本次任务未执行，已被执行
-     */
+    /** 本次任务未执行，已被执行 */
     public static final int FAIL_CHECK = 22;
-    /**
-     * 本次任务未执行，获取任务锁失败
-     */
+    /** 本次任务未执行，获取任务锁失败 */
     public static final int FAIL_LOCK = 23;
 
 
@@ -52,14 +43,10 @@ public abstract class AbstractScheduler {
      */
     private int heartTime;
 
-    /**
-     * 任务执行状态
-     */
+    /** 任务执行状态 */
     private int status;
 
-    /**
-     * 任务执行出现的异常
-     */
+    /** 任务执行出现的异常 */
     private Exception exception;
 
     public AbstractScheduler() {
@@ -167,12 +154,13 @@ public abstract class AbstractScheduler {
      * 本次任务执行结束
      *
      * @param method 执行的方法
-     * @param targer 执行的方法对象
+     * @param target 执行的方法对象
      * @param startTimeMillis 任务开始时间（毫秒），中间件服务器时间，只有任务执行成功才会有值
      * @param endTimeMillis 任务结束时间（毫秒），中间件服务器时间，只有任务执行成功才会有值
+     * @param description 任务描述 {@link ScheduledCluster#description()}
      * @throws Exception 如果出现异常又不想处理，可以抛回给Spring处理
      */
-    public void executed(Method method, Object targer, long startTimeMillis, long endTimeMillis) throws Exception{
+    public void executed(Method method, Object target, long startTimeMillis, long endTimeMillis, String description) throws Exception{
         if(status == ERROR){
             throw getException();
         }
@@ -183,18 +171,34 @@ public abstract class AbstractScheduler {
         exception = null;
     }
 
+    /**
+     * @see #status
+     * @return
+     */
     public int getStatus() {
         return status;
     }
 
+    /**
+     * @see #status
+     * @return
+     */
     public void setStatus(int status) {
         this.status = status;
     }
 
+    /**
+     * @see #exception
+     * @return
+     */
     public Exception getException() {
         return exception;
     }
 
+    /**
+     * @see #exception
+     * @return
+     */
     public void setException(Exception exception) {
         this.exception = exception;
     }

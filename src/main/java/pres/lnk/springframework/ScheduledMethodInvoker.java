@@ -33,6 +33,12 @@ public class ScheduledMethodInvoker {
      */
     private boolean ignore = false;
 
+    /**
+     * 是否忽略集群控制
+     * @see ScheduledCluster#ignore()
+     */
+    private String description;
+
 
     /** 定时任务调度器 */
     private AbstractScheduler scheduler;
@@ -99,7 +105,7 @@ public class ScheduledMethodInvoker {
             scheduler.setException(ex);
         } finally {
             try {
-                scheduler.executed(this.method, this.target, startTimeMillis, endTimeMillis);
+                scheduler.executed(this.method, this.target, startTimeMillis, endTimeMillis, description);
             } catch (InvocationTargetException ex) {
                 ReflectionUtils.rethrowRuntimeException(ex.getTargetException());
             } catch (IllegalAccessException ex) {
