@@ -19,15 +19,23 @@ public abstract class AbstractScheduler {
      */
     public static final int SUCCESS = 1;
     /**
-     * 本次任务未执行，可能是没抢到任务锁，或服务器级别低
-     */
-    public static final int FAIL = 2;
-    /**
      * 本次任务执行出现异常
      *
      * @see #getException()
      */
     public static final int ERROR = 3;
+    /**
+     * 本次任务未执行，服务器级别低
+     */
+    public static final int FAIL_LEVEL = 21;
+    /**
+     * 本次任务未执行，已被执行
+     */
+    public static final int FAIL_CHECK = 22;
+    /**
+     * 本次任务未执行，获取任务锁失败
+     */
+    public static final int FAIL_LOCK = 23;
 
 
     /**

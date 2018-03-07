@@ -32,7 +32,7 @@ public ScheduledAnnotationBeanPostProcessor scheduledAnnotationProcessor() {
 }
 ```
 
-## 实现调度器中间器对定时任务进行锁操作
+## 实现调度器中间件对定时任务进行锁操作
 
 ### 使用 redis 缓存做中间件
 将下面类的代码添加到项目中，并注册成SpringBean限可
@@ -101,7 +101,7 @@ public class RedisSchedulerImpl extends AbstractScheduler {
         int level = getLevel();
         String key = prefixKey(MAX_LEVEL);
         Integer maxLevel = getCache(MAX_LEVEL);
-        //如果maxLevel，就将当前level写进去
+        //如果maxLevel为null，就将当前level写进去
         if (maxLevel == null) {
             //控制只能写一个，防止并发低级别把高级别覆盖了
             boolean result = redisTemplate.opsForValue().setIfAbsent(key, level);
@@ -115,7 +115,7 @@ public class RedisSchedulerImpl extends AbstractScheduler {
             }
         }
 
-        //如果当前级别比最高级别还要高，则覆盖它
+        //如果当前级别比缓存里级别还要高，则覆盖它
         if (maxLevel > level) {
             redisTemplate.delete(key);
             keepAlive();
@@ -152,8 +152,12 @@ public class RedisSchedulerImpl extends AbstractScheduler {
         switch (getStatus()){
             case AbstractScheduler.SUCCESS :
                 // 执行成功
-            case AbstractScheduler.FAIL :
-                // 未执行任务
+            case AbstractScheduler.FAIL_CHECK :
+                // 未执行任务，已有服务器执行过
+            case AbstractScheduler.FAIL_LOCK :
+                // 未执行任务，获取锁失败
+            case AbstractScheduler.FAIL_LEVEL :
+                // 未执行任务，级别低
             case AbstractScheduler.ERROR :
                 // 执行任务出现异常，如果不想处理可以抛回由Spring处理
                 throw getException();
@@ -291,8 +295,12 @@ public class MysqlSchedulerImpl extends AbstractScheduler {
         switch (getStatus()){
             case AbstractScheduler.SUCCESS :
                 // 执行成功
-            case AbstractScheduler.FAIL :
-                // 未执行任务
+            case AbstractScheduler.FAIL_CHECK :
+                // 未执行任务，已有服务器执行过
+            case AbstractScheduler.FAIL_LOCK :
+                // 未执行任务，获取锁失败
+            case AbstractScheduler.FAIL_LEVEL :
+                // 未执行任务，级别低
             case AbstractScheduler.ERROR :
                 // 执行任务出现异常，如果不想处理可以抛回由Spring处理
                 throw getException();
@@ -408,7 +416,7 @@ public interface TimedTaskMapper {
 t_timed_task
 
 字段 | 类型 | 说明
-- | - | - 
+ --- | --- | --- 
 id | varchar(255) PRIMARY NOT NULL | 任务id
 timeout | bigint NOT NULL | 锁的失效时间
 value | varchar(255) DEFAULT NULL | 锁对应的值
@@ -429,7 +437,7 @@ CREATE TABLE `t_timed_task` (
 `AbstractScheduler` 方法说明
 
  方法 | 必须 | 说明
- - | - | - 
+  --- | --- | --- 
  boolean check(String id) | 是 | 检查任务id是否没被锁，如果没被锁则表示可以执行任务，下一步就获取锁 
  boolean lock(String id, long timeoutMillis) | 是 | 对任务id加锁，并在下次执行任务前释放锁，返回加锁是否成功 
  void relock(String id, long timeoutMillis) | 是 | 修改任务id锁的释放时间 
@@ -455,5 +463,8 @@ spring:
 
 配置说明：   
 level ： 优先级别，1 等级最高，数字越大等级越低。其中 0 是该服务器不执行定时任务。 -1 是不参与集群服务调度，不受优先级影响，任务每次都会执行。   
-heartTime ： 心跳时间，服务器会以这个时间频率告诉中间件我还活着
+heartTime ： 心跳时间，服务器会以这个时间频率告诉中间件我还活着   
+
+或者重写中间件的getLevel()方法，自定义level规则，例如根据ip判断level，这样不用每个服务器单独改配置文件
+
 

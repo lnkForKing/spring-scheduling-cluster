@@ -61,6 +61,7 @@ public class ScheduledMethodInvoker {
 
             if (scheduler.getLevel() == 0 || scheduler.getLevel() > maxLevel) {
                 //如果当前服务器的级别是0，或比当前运行中最高级别的服务器低，则不执行任务
+                scheduler.setStatus(AbstractScheduler.FAIL_LEVEL);
                 return;
             }else if(scheduler.getLevel() < maxLevel){
                 //如果当前服务器比最高级别还要高，则修改中间件的最高级别
@@ -75,18 +76,26 @@ public class ScheduledMethodInvoker {
                 //减500毫秒是为了解决jdk定时任务存在误差问题，防止下次任务执行时间时间还没到而跳过本次任务
                 timeoutMillis -= 500;
                 if (scheduler.lock(taskId, timeoutMillis)) {
+                    //获取锁成功，执行任务
                     startTimeMillis = scheduler.currentTimeMillis();
                     ReflectionUtils.makeAccessible(this.method);
                     this.method.invoke(this.target);
                     endTimeMillis = scheduler.currentTimeMillis();
+                    scheduler.setStatus(AbstractScheduler.SUCCESS);
 
                     if (ScheduledUtil.SCHEDULED_FIXED_DELAY.equals(ScheduledUtil.getType(scheduled))) {
+                        //fixedDelay 为任务执行结束再计算下次执行时间
                         timeoutMillis = ScheduledUtil.getNextTimeInterval(scheduled, embeddedValueResolver);
                         scheduler.relock(taskId, timeoutMillis);
                     }
+                }else{
+                    scheduler.setStatus(AbstractScheduler.FAIL_LOCK);
                 }
+            }else {
+                scheduler.setStatus(AbstractScheduler.FAIL_CHECK);
             }
         } catch (Exception ex){
+            scheduler.setStatus(AbstractScheduler.ERROR);
             scheduler.setException(ex);
         } finally {
             try {
