@@ -472,11 +472,11 @@ heartTime ： 心跳时间，服务器会以这个时间频率告诉中间件我
 ## 注解@ScheduledCluster
 该注解用在`@Scheduled`的方法上，有以下属性
 
-属性 | 说明
---- | ---
-id | 自定义任务id
-description | 任务描述
-ignore | 是否忽略集群控制，作用跟level=-1一样，但只针对该任务
+属性 | 必填 | 说明
+--- | --- | ---
+id | 否 | 自定义任务id
+description | 否 | 任务描述
+ignore | 否 | 是否忽略集群控制，作用跟level=-1一样，但只针对该任务
 
 ``` java
 @ScheduledCluster(id="updateData", description = "每小时更新一次数据")
