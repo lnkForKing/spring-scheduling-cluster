@@ -35,7 +35,8 @@ public ScheduledAnnotationBeanPostProcessor scheduledAnnotationProcessor() {
 ## 实现调度器中间件对定时任务进行锁操作
 
 ### 使用 redis 缓存做中间件
-将下面类的代码添加到项目中，并注册成SpringBean限可
+将下面类的代码添加到项目中，并注册成SpringBean限可   
+代码 https://gitee.com/lnkToKing/codes/a8lpt3qu0dxsofgneyck293
 
 ``` java
 import org.springframework.beans.factory.annotation.Autowired;
@@ -177,7 +178,8 @@ public class RedisSchedulerImpl extends AbstractScheduler {
 ```
 
 ### 使用 mysql数据库 做中间件
-由于每个项目使用的持久化框架不一样，下面只提供了Mybatis的实现做参考，请根据自己项目框架做改动
+由于每个项目使用的持久化框架不一样，下面只提供了Mybatis的实现做参考，请根据自己项目框架做改动   
+代码 https://gitee.com/lnkToKing/codes/58odhmxnve63ua41qlgs064
 
 ``` java
 import com.gzkit.crm.mcs.mapper.TimedTaskMapper;
@@ -322,93 +324,97 @@ import org.apache.ibatis.annotations.Param;
  */
 @Mapper
 public interface TimedTaskMapper {
+
     /**
-     * select count(*) from t_timed_task
-     * where id = #{id, jdbcType=VARCHAR} and timeout >= UNIX_TIMESTAMP(now())
-     *
+     * 判断是否被锁
      * @param id
      * @return
      */
+    @Select("select count(*) from t_timed_task " +
+            "where id = #{id, jdbcType=VARCHAR} and timeout >= UNIX_TIMESTAMP(now())")
     int check(String id);
 
     /**
-     * select count(*) from t_timed_task where id = #{id, jdbcType=VARCHAR}
-     *
+     * 判断是否存在锁
      * @param id
      * @return
      */
+    @Select("select count(*) from t_timed_task where id = #{id, jdbcType=VARCHAR}")
     int hasId(String id);
 
     /**
-     * update t_timed_task set timeout = UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT}
-     * where id = #{id, jdbcType=VARCHAR} and timeout &lt; UNIX_TIMESTAMP(now())
-     *
+     * 修改锁的过期时间，用返回修改数据数判断是否修改成功
      * @param id
      * @param timeout
      * @return
      */
+    @Update("update t_timed_task set timeout = UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT} " +
+            "where id = #{id, jdbcType=VARCHAR} and timeout < UNIX_TIMESTAMP(now())")
     int lock(@Param("id") String id, @Param("timeout") long timeout);
 
     /**
-     * insert into t_timed_task values (
-     * #{id, jdbcType=VARCHAR},
-     * UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT},
-     * #{value, jdbcType=VARCHAR}
-     * )
-     *
+     * 插入锁数据，用返回插入数据数判断是否加锁成功
      * @param id
      * @param timeout
      * @param value
      * @return
      */
+    @Insert("insert into t_timed_task values ( " +
+            "#{id, jdbcType=VARCHAR}," +
+            "UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT}," +
+            "#{value, jdbcType=VARCHAR} )")
     int insert(@Param("id") String id, @Param("timeout") long timeout, @Param("value") String value);
 
     /**
-     * update t_timed_task set
-     * timeout = UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT},
-     * value = #{value, jdbcType=VARCHAR}
-     * where id = #{id, jdbcType=VARCHAR}
-     *
+     * 修改锁的过期时间
      * @param id
      * @param timeout
      * @param value
      * @return
      */
+    @Update("update t_timed_task set " +
+            "timeout = UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT}," +
+            "value = #{value, jdbcType=VARCHAR}" +
+            "where id = #{id, jdbcType=VARCHAR}")
     int update(@Param("id") String id, @Param("timeout") long timeout, @Param("value") String value);
 
     /**
-     * select UNIX_TIMESTAMP(now())
-     *
+     * 获取数据库的系统时间
      * @return
      */
+    @Select("select UNIX_TIMESTAMP(now())")
     long time();
 
     /**
-     * update t_timed_task set value = #{value, jdbcType=VARCHAR}, timeout = UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT}
-     * where id = #{id, jdbcType=VARCHAR} and (value &gt; #{value, jdbcType=VARCHAR} or timeout &lt; UNIX_TIMESTAMP(now()))
-     *
-     * @param id
-     * @return
-     */
-    int updateLevel(@Param("id") String id, @Param("value") String value, @Param("timeout") long timeout);
-
-    /**
-     * update t_timed_task set timeout = UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT}
-     * where id = #{id, jdbcType=VARCHAR} and value = #{value, jdbcType=VARCHAR}
-     *
+     * 更新服务器级别
      * @param id
      * @param value
      * @param timeout
      * @return
      */
+    @Update("update t_timed_task set value = #{value, jdbcType=VARCHAR}," +
+            "timeout = UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT} " +
+            "where id = #{id, jdbcType=VARCHAR} " +
+            "and (value > #{value, jdbcType=VARCHAR} or timeout < UNIX_TIMESTAMP(now()))")
+    int updateLevel(@Param("id") String id, @Param("value") String value, @Param("timeout") long timeout);
+
+    /**
+     * 更新服务器级别的有效时间
+     * @param id
+     * @param value
+     * @param timeout
+     * @return
+     */
+    @Update("update t_timed_task set timeout = UNIX_TIMESTAMP(now()) + #{timeout, jdbcType=BIGINT} " +
+            "where id = #{id, jdbcType=VARCHAR} and value = #{value, jdbcType=VARCHAR}")
     int updateLevelTime(@Param("id") String id, @Param("value") String value, @Param("timeout") long timeout);
 
     /**
-     * select value from t_timed_task where id = #{id, jdbcType=VARCHAR} and timeout &gt; UNIX_TIMESTAMP(now())
-     *
+     * 获取当前最高级别服务器的级别
      * @param id
      * @return
      */
+    @Select("select value from t_timed_task where id = #{id, jdbcType=VARCHAR} and timeout > UNIX_TIMESTAMP(now())")
     String getMaxLevel(String id);
 }
 
