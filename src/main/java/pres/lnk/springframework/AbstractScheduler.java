@@ -201,5 +201,6 @@ public abstract class AbstractScheduler {
      */
     public void setException(Exception exception) {
         this.exception = exception;
+        setStatus(AbstractScheduler.ERROR);
     }
 }

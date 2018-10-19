@@ -101,7 +101,6 @@ public class ScheduledMethodInvoker {
                 scheduler.setStatus(AbstractScheduler.FAIL_CHECK);
             }
         } catch (Exception ex){
-            scheduler.setStatus(AbstractScheduler.ERROR);
             scheduler.setException(ex);
         } finally {
             try {
@@ -116,7 +115,6 @@ public class ScheduledMethodInvoker {
         }
 
     }
-
     public void init() {
         ScheduledCluster ds = method.getAnnotation(ScheduledCluster.class);
         if (ds != null) {
@@ -124,12 +122,13 @@ public class ScheduledMethodInvoker {
                 taskId = ds.id();
             }
             ignore = ds.ignore();
-        }else{
+        }
+        if(StringUtils.isEmpty(taskId)){
             taskId = method.getDeclaringClass().getCanonicalName() + "." + method.getName();
-            taskId = taskId.replaceAll("\\W", "_");
         }
         Scheduled scheduled = method.getAnnotation(Scheduled.class);
         String flag = ScheduledUtil.getFlag(scheduled, embeddedValueResolver);
         taskId += "_" + flag;
+        taskId = taskId.replaceAll("\\W", "_");
     }
 }

@@ -45,7 +45,7 @@ public class LocalSchedulerImpl extends AbstractScheduler {
     /**
      * 利用jdk内部int[-128 ~ 127]范围返回是同一个对象的特性，生成字符串的锁
      * 同一个字符串的锁肯定是同一个，保证锁的同步
-     * 最多同时产生-127 ~ 127之间的255个同步锁
+     * 最多同时产生0 ~ 127之间的128个同步锁
      *
      * @param str
      * @return
