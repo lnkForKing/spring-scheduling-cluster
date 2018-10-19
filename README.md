@@ -42,19 +42,7 @@ redis实现代码 https://gitee.com/lnkToKing/codes/a8lpt3qu0dxsofgneyck293
 ### 使用 mysql数据库 做中间件
 由于每个项目使用的持久化框架不一样，下面只提供了MyBatis的实现做参考，请根据自己项目框架做改动   
 mysql实现代码 https://gitee.com/lnkToKing/codes/58odhmxnve63ua41qlgs064#MysqlSchedulerImpl.java   
-基本MyBatis实现的数据访问Mapper代码 https://gitee.com/lnkToKing/codes/58odhmxnve63ua41qlgs064#TimedTaskMapper.java
-
-### 使用 zookeeper 做中间件
-将下面类的代码添加到项目中   
-zookeeper实现代码 https://gitee.com/lnkToKing/codes/70mzu5eday6gtip1nw9vj67   
-然后注册成SpringBean
-``` java
-@Bean
-public ZookeeperSchedulerImpl getScheduler(CuratorFramework zkClient) throws Exception {
-    return new ZookeeperSchedulerImpl(zkClient);
-}
-```
-需要注意一点：实现类的currentTimeMillis方法获取的是本地时间，如果集群中某些或某个服务器系统时间误差太大，可能会造成任务执行间隔缩短。所以最好修改该方法从指定的服务器获取一致的时间，例如可以获取数据库的时间。
+基本MyBatis实现的数据访问Mapper代码 https://gitee.com/lnkToKing/codes/58odhmxnve63ua41qlgs064#TimedTaskMapper.java   
 
 数据库表结构   
 t_timed_task
@@ -75,6 +63,20 @@ CREATE TABLE `t_timed_task` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ```
+
+
+### 使用 zookeeper 做中间件
+将下面类的代码添加到项目中   
+zookeeper实现代码 https://gitee.com/lnkToKing/codes/70mzu5eday6gtip1nw9vj67   
+然后注册成SpringBean
+``` java
+@Bean
+public ZookeeperSchedulerImpl getScheduler(CuratorFramework zkClient) throws Exception {
+    return new ZookeeperSchedulerImpl(zkClient);
+}
+```
+需要注意一点：实现类的currentTimeMillis方法获取的是本地时间，如果集群中某些或某个服务器系统时间误差太大，可能会造成任务执行间隔缩短。所以最好修改该方法从指定的服务器获取一致的时间，例如可以获取数据库的时间。
+
 
 ### 自定义中间件
 自定义类继承抽象类`AbstractScheduler`，实现父类的方法并注册成Spring Bean。   
