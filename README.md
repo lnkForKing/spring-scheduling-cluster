@@ -120,9 +120,10 @@ heartTime ： 心跳时间，服务器会以这个时间频率告诉中间件我
 --- | --- | ---
 id | 否 | 自定义任务id，同一个时间段内同一个id的任务只有一个能执行成功
 description | 否 | 任务描述
-ignore | 否 | 是否忽略集群控制，作用跟level=-1一样，但只针对该任务
+ignore | 否 | 是否忽略集群控制，作用跟level=-1一样，但只针对该任务。例如定时清理本地临时文件
 
 ``` java
+// @ScheduledCluster 是可选的
 @ScheduledCluster(id="updateData", description = "每小时更新一次数据")
 @Scheduled(cron = "0 0 0/1 * * ?")
 public void update(){
