@@ -76,11 +76,16 @@ public class ScheduledUtil {
      * @return
      */
     public static long getNextTimeInterval(Scheduled scheduled, StringValueResolver embeddedValueResolver) {
-        if (StringUtils.hasText(scheduled.cron())) {
+        String cron = scheduled.cron();
+        if (StringUtils.hasText(cron)) {
             try {
-                CronExpression exp = new CronExpression(scheduled.cron());
-
                 String zone = scheduled.zone();
+                if (embeddedValueResolver != null) {
+                    cron = embeddedValueResolver.resolveStringValue(cron);
+                    zone = embeddedValueResolver.resolveStringValue(zone);
+                }
+                CronExpression exp = new CronExpression(cron);
+
                 TimeZone timeZone;
                 if (StringUtils.hasText(zone)) {
                     timeZone = StringUtils.parseTimeZoneString(zone);
@@ -94,6 +99,7 @@ public class ScheduledUtil {
                 throw new IllegalArgumentException(e);
             }
         }
+
         if (scheduled.fixedDelay() > 0 || StringUtils.hasText(scheduled.fixedDelayString())) {
             if (scheduled.fixedDelay() > 0) {
                 return scheduled.fixedDelay();
