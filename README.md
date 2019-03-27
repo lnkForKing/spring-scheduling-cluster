@@ -22,13 +22,21 @@ Spring Boot 自带定时器Scheduled增加分布式/集群环境下任务调度�
 ```
 
 ### 启用插件
-在 Spring 配置中添加以下代码将插件注册成Bean（注意，原来用来启动定时器的注解@EnableScheduling还是要添加的）
+1. 在 Spring 配置中用注解`@EnableClusterScheduling`代替注解`@EnableScheduling`（注意，原来用来启动定时器的注解@EnableScheduling要去掉，两个只能添加其中一个）
+2. 将调度器中间件注册成Bean，参考下面的《实现调度器中间件对定时任务进行锁操作》。注意：该Bean的注册不能和定时任务@Scheduled放在同一个类下配置
 
 ``` java
-@Bean(name = TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME)
-@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-public ScheduledAnnotationBeanPostProcessor scheduledAnnotationProcessor() {
-    return new ScheduledClusterAnnotationBeanPostProcessor();
+@Scheduled(cron = "0/1 * * * * ?")
+public void timedTask1() {
+    //TODO
+}
+
+/**
+ * 这是错误做法，调度器中间件不能和 @Scheduled 放在同一个类，否则插件可能不会生效
+ */
+@Bean
+public AbstractScheduler getScheduler() {
+    // return AbstractScheduler 的实现类
 }
 ```
 
