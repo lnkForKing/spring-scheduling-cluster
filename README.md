@@ -26,17 +26,21 @@ Spring Boot 自带定时器Scheduled增加分布式/集群环境下任务调度�
 2. 将调度器中间件注册成Bean，参考下面的《实现调度器中间件对定时任务进行锁操作》。注意：该Bean的注册不能和定时任务@Scheduled放在同一个类下配置
 
 ``` java
-@Scheduled(cron = "0/1 * * * * ?")
-public void timedTask1() {
-    //TODO
-}
+@Configuration
+public class MyConfig {
 
-/**
- * 这是错误做法，调度器中间件不能和 @Scheduled 放在同一个类，否则插件可能不会生效
- */
-@Bean
-public AbstractScheduler getScheduler() {
-    // return AbstractScheduler 的实现类
+    @Scheduled(cron = "0/1 * * * * ?")
+    public void timedTask1() {
+        //TODO
+    }
+
+    /**
+     * 这是错误做法，调度器中间件不能和 @Scheduled 放在同一个类，否则插件可能不会生效
+     */
+    @Bean
+    public AbstractScheduler getScheduler() {
+        // return AbstractScheduler 的实现类
+    }
 }
 ```
 
