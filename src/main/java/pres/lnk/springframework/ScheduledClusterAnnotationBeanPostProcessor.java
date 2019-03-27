@@ -1,5 +1,7 @@
 package pres.lnk.springframework;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,6 +22,7 @@ import java.lang.reflect.Method;
  * @Date 2018/2/28
  */
 public class ScheduledClusterAnnotationBeanPostProcessor extends ScheduledAnnotationBeanPostProcessor implements SchedulingConfigurer {
+    private static Logger logger = LoggerFactory.getLogger(ScheduledClusterAnnotationBeanPostProcessor.class);
 
     private StringValueResolver embeddedValueResolver;
 
@@ -40,7 +43,8 @@ public class ScheduledClusterAnnotationBeanPostProcessor extends ScheduledAnnota
             bean = new ScheduledMethodInvoker(bean, method, scheduler, embeddedValueResolver);
             method = ScheduledMethodInvoker.class.getMethod("invoke");
         } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
+            return;
         }
         super.processScheduled(scheduled, method, bean);
     }

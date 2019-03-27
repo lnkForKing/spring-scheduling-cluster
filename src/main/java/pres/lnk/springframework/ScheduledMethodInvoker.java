@@ -1,6 +1,7 @@
 package pres.lnk.springframework;
 
 import org.springframework.aop.support.AopUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -13,34 +14,45 @@ import java.lang.reflect.UndeclaredThrowableException;
 
 /**
  * 定时任务执行器
+ *
  * @Author lnk
  * @Date 2018/2/28
  */
 public class ScheduledMethodInvoker {
 
-    /** 任务对象 */
+    /**
+     * 任务对象
+     */
     private final Object target;
 
-    /** 定时任务的执行方法 */
+    /**
+     * 定时任务的执行方法
+     */
     private final Method method;
 
-    /** 任务id，用来做锁 */
+    /**
+     * 任务id，用来做锁
+     */
     private String taskId;
 
     /**
      * 是否忽略集群控制
+     *
      * @see ScheduledCluster#ignore()
      */
     private boolean ignore = false;
 
     /**
      * 是否忽略集群控制
-     * @see ScheduledCluster#ignore()
+     *
+     * @see ScheduledCluster#description()
      */
     private String description;
 
 
-    /** 定时任务调度器 */
+    /**
+     * 定时任务调度器
+     */
     private AbstractScheduler scheduler;
 
     private StringValueResolver embeddedValueResolver;
@@ -69,7 +81,7 @@ public class ScheduledMethodInvoker {
                 //如果当前服务器的级别是0，或比当前运行中最高级别的服务器低，则不执行任务
                 scheduler.setStatus(AbstractScheduler.FAIL_LEVEL);
                 return;
-            }else if(scheduler.getLevel() < maxLevel){
+            } else if (scheduler.getLevel() < maxLevel) {
                 //如果当前服务器比最高级别还要高，则修改中间件的最高级别
                 scheduler.keepAlive();
             }
@@ -94,13 +106,13 @@ public class ScheduledMethodInvoker {
                         timeoutMillis = ScheduledUtil.getNextTimeInterval(scheduled, embeddedValueResolver);
                         scheduler.relock(taskId, timeoutMillis);
                     }
-                }else{
+                } else {
                     scheduler.setStatus(AbstractScheduler.FAIL_LOCK);
                 }
-            }else {
+            } else {
                 scheduler.setStatus(AbstractScheduler.FAIL_CHECK);
             }
-        } catch (Exception ex){
+        } catch (Exception ex) {
             scheduler.setException(ex);
         } finally {
             try {
@@ -109,21 +121,22 @@ public class ScheduledMethodInvoker {
                 ReflectionUtils.rethrowRuntimeException(ex.getTargetException());
             } catch (IllegalAccessException ex) {
                 throw new UndeclaredThrowableException(ex);
-            } catch (Exception ex){
+            } catch (Exception ex) {
                 ReflectionUtils.rethrowRuntimeException(ex);
             }
         }
 
     }
+
     public void init() {
-        ScheduledCluster ds = method.getAnnotation(ScheduledCluster.class);
+        ScheduledCluster ds = AnnotationUtils.getAnnotation(method, ScheduledCluster.class);
         if (ds != null) {
             if (StringUtils.hasText(ds.id())) {
                 taskId = ds.id();
             }
             ignore = ds.ignore();
         }
-        if(StringUtils.isEmpty(taskId)){
+        if (StringUtils.isEmpty(taskId)) {
             taskId = method.getDeclaringClass().getCanonicalName() + "." + method.getName();
         }
         Scheduled scheduled = method.getAnnotation(Scheduled.class);
