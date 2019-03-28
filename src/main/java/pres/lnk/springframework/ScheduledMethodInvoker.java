@@ -124,6 +124,7 @@ public class ScheduledMethodInvoker {
             } catch (Exception ex) {
                 ReflectionUtils.rethrowRuntimeException(ex);
             }
+            scheduler.reStatus();
         }
 
     }
@@ -135,13 +136,14 @@ public class ScheduledMethodInvoker {
                 taskId = ds.id();
             }
             ignore = ds.ignore();
+            description = ds.description();
         }
         if (StringUtils.isEmpty(taskId)) {
             taskId = method.getDeclaringClass().getCanonicalName() + "." + method.getName();
         }
-        Scheduled scheduled = method.getAnnotation(Scheduled.class);
-        String flag = ScheduledUtil.getFlag(scheduled, embeddedValueResolver);
-        taskId += "_" + flag;
-        taskId = taskId.replaceAll("\\W", "_");
+//        Scheduled scheduled = method.getAnnotation(Scheduled.class);
+//        String flag = ScheduledUtil.getFlag(scheduled, embeddedValueResolver);
+//        taskId += "_" + flag;
+//        taskId = taskId.replaceAll("\\W", "_");
     }
 }

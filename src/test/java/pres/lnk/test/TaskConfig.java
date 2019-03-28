@@ -25,7 +25,7 @@ public class TaskConfig {
 
 
     /**
-     * @see #timedTask2()
+     * @see #timedTask1()
      */
     @ScheduledCluster("task")
     @Scheduled(cron = "0/1 * * * * ?")
