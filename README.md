@@ -48,13 +48,12 @@ public class MyConfig {
 
 ### 使用 redis 缓存做中间件
 将下面类的代码添加到项目中，并注册成SpringBean限可   
-redis实现代码 https://gitee.com/lnkToKing/codes/a8lpt3qu0dxsofgneyck293
+redis实现代码 https://github.com/lnkForKing/spring-scheduling-cluster/wiki/redis%E7%BC%93%E5%AD%98%E4%B8%AD%E9%97%B4%E4%BB%B6   
 
 
 ### 使用 mysql数据库 做中间件
 由于每个项目使用的持久化框架不一样，下面只提供了MyBatis的实现做参考，请根据自己项目框架做改动   
-mysql实现代码 https://gitee.com/lnkToKing/codes/58odhmxnve63ua41qlgs064#MysqlSchedulerImpl.java   
-基本MyBatis实现的数据访问Mapper代码 https://gitee.com/lnkToKing/codes/58odhmxnve63ua41qlgs064#TimedTaskMapper.java   
+mysql实现代码 https://github.com/lnkForKing/spring-scheduling-cluster/wiki/mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%AD%E9%97%B4%E4%BB%B6   
 
 数据库表结构   
 t_timed_task
@@ -79,7 +78,7 @@ CREATE TABLE `t_timed_task` (
 
 ### 使用 zookeeper 做中间件
 将下面类的代码添加到项目中   
-zookeeper实现代码 https://gitee.com/lnkToKing/codes/70mzu5eday6gtip1nw9vj67   
+zookeeper实现代码 https://github.com/lnkForKing/spring-scheduling-cluster/wiki/zookeeper%E4%B8%AD%E9%97%B4%E4%BB%B6   
 然后注册成SpringBean
 ``` java
 @Bean
